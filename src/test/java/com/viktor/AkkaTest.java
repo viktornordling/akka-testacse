@@ -1,19 +1,27 @@
 package com.viktor;
 
+import org.junit.Test;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static akka.actor.Actors.remote;
+import static junit.framework.Assert.assertEquals;
 
-public class AkkaClient {
+public class AkkaTest {
 
 	private final AtomicInteger counter = new AtomicInteger();
 
-	public AkkaClient() {
-		ExecutorService executorService = Executors.newFixedThreadPool(100);
-		for (int i = 0; i < 10000; i++) {
+	private final int ITERATIONS = 1000;
+
+	private final int THREADS = 100;
+
+	@Test
+	public void testAkka() {
+		ExecutorService executorService = Executors.newFixedThreadPool(THREADS);
+		for (int i = 0; i < ITERATIONS; i++) {
 			final IdService service = remote().typedActorFor(IdService.class, "table-id-service", "localhost", 2553);
 			executorService.submit(tableIdLookup(service, i));
 		}
@@ -24,14 +32,10 @@ public class AkkaClient {
 			executorService.awaitTermination(10, TimeUnit.SECONDS);
 			System.out.println("Terminated.");
 			System.out.println("Counter: " + counter.get());
-			System.exit(0);
+			assertEquals(ITERATIONS, counter.get());
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-	}
-
-	public static void main(String[] args) {
-		new AkkaClient();
 	}
 
 	private Runnable tableIdLookup(final IdService service, final int lookupId) {

@@ -47,7 +47,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>com.pvpcasino.client.TextClient</mainClass>
+                    <mainClass>com.viktor.AkkaServer</mainClass>
                 </configuration>
             </plugin>
         </plugins>
