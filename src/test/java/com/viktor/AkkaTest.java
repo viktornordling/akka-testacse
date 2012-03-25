@@ -1,5 +1,10 @@
 package com.viktor;
 
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.actor.TypedActor;
+import akka.actor.TypedProps;
+import com.typesafe.config.ConfigFactory;
 import org.junit.Test;
 
 import java.util.concurrent.ExecutorService;
@@ -7,23 +12,31 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static akka.actor.Actors.remote;
 import static junit.framework.Assert.assertEquals;
 
 public class AkkaTest {
 
 	private final AtomicInteger counter = new AtomicInteger();
 
-	private final int ITERATIONS = 1000;
+	private final int ITERATIONS = 10000;
 
 	private final int THREADS = 100;
+
+	private ActorSystem system;
+	private ActorRef remoteActor;
+
 
 	@Test
 	public void testAkka() {
 		ExecutorService executorService = Executors.newFixedThreadPool(THREADS);
+
+		system = ActorSystem.create("LookupApplication", ConfigFactory.load().getConfig("remotelookup"));
+		remoteActor = system.actorFor("akka://IdApplication@127.0.0.1:2552/user/typedIdService");
+
+		IdService idService = TypedActor.get(system).typedActorOf(new TypedProps<IdServiceImpl>(IdService.class, IdServiceImpl.class), remoteActor);
+
 		for (int i = 0; i < ITERATIONS; i++) {
-			final IdService service = remote().typedActorFor(IdService.class, "table-id-service", "localhost", 2553);
-			executorService.submit(tableIdLookup(service, i));
+			executorService.submit(tableIdLookup(idService, i));
 		}
 		try {
 			System.out.println("Shutting down");
@@ -38,19 +51,19 @@ public class AkkaTest {
 		}
 	}
 
-	private Runnable tableIdLookup(final IdService service, final int lookupId) {
+	private Runnable tableIdLookup(final IdService actor, final int lookupId) {
 		return new Runnable() {
 
 			@Override
 			public void run() {
-				lookupTableId(service, lookupId);
+				lookupTableId(actor, lookupId);
 			}
 		};
 	}
 
-	private void lookupTableId(IdService service, int lookupId) {
-		int result = service.getNextTableId();
-		System.out.println("Result of lookup " + lookupId + " = " + result);
+	private void lookupTableId(IdService actor, int lookupId) {
+		int nextTableId = actor.getNextTableId();
+		System.out.println("Lookup: " + lookupId + ". Got: " + nextTableId);
 		counter.incrementAndGet();
 	}
 }
