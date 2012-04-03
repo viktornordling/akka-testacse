@@ -13,8 +13,6 @@ public class AkkaServer implements Bootable {
 
 	public AkkaServer() {
 		system = ActorSystem.create("IdApplication", ConfigFactory.load().getConfig("id-generator"));
-		ActorRef actor = system.actorOf(new Props(IdGeneratorActor.class), "idService");
-
 		IdService idService = TypedActor.get(system).typedActorOf(new TypedProps<IdServiceImpl>(IdService.class, IdServiceImpl.class), "typedIdService");
 		System.out.println("Server running..");
 	}

@@ -10,4 +10,6 @@ mvn exec:java
 Now, in a new session, run:
 mvn test
 
-This test fails randomly for me running Akka 1.1.3, but never running 1.1.2.
+This test failed randomly running Akka 1.1.3, but never running 1.1.2.
+
+UPDATE: In Akka 2.0 this is now working properly. This project will now serve as a "Hello Typed Actor Akka World".
